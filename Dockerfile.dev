@@ -1,0 +1,16 @@
+FROM golang:1.26.1-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039
+
+RUN apk add --no-cache curl bash unzip
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
+
+ENV GO111MODULE=on CGO_ENABLED=0
+ENV GOEXPERIMENT=greenteagc
+
+EXPOSE 3000
+WORKDIR /data
+
+COPY scripts/dev-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
