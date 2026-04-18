@@ -186,6 +186,9 @@ export const useLogsData = () => {
   const [showParamOverrideModal, setShowParamOverrideModal] = useState(false);
   const [paramOverrideTarget, setParamOverrideTarget] = useState(null);
 
+  const [showLogContentDrawer, setShowLogContentDrawer] = useState(false);
+  const [logContentRequestId, setLogContentRequestId] = useState(null);
+
   // Initialize default column visibility
   const initDefaultColumns = () => {
     const defaults = getDefaultColumnVisibility();
@@ -876,6 +879,16 @@ export const useLogsData = () => {
     showParamOverrideModal,
     setShowParamOverrideModal,
     paramOverrideTarget,
+
+    // Log content drawer
+    showLogContentDrawer,
+    setShowLogContentDrawer,
+    logContentRequestId,
+    setLogContentRequestId,
+    openLogContentDrawer: (requestId) => {
+      setLogContentRequestId(requestId);
+      setShowLogContentDrawer(true);
+    },
 
     // Functions
     loadLogs,

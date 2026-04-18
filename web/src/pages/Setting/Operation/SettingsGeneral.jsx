@@ -50,6 +50,7 @@ export default function GeneralSettings(props) {
     'general_setting.quota_display_type': 'USD',
     'general_setting.custom_currency_symbol': '¤',
     'general_setting.custom_currency_exchange_rate': '',
+    'general_setting.log_content_enabled': false,
     QuotaPerUnit: '',
     RetryTimes: '',
     USDExchangeRate: '',
@@ -388,6 +389,19 @@ export default function GeneralSettings(props) {
                   checkedText='｜'
                   uncheckedText='〇'
                   onChange={handleFieldChange('SelfUseModeEnabled')}
+                />
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.Switch
+                  field={'general_setting.log_content_enabled'}
+                  label={t('记录输入输出内容')}
+                  extraText={t('开启后将记录每次调用的完整输入和输出内容，可能占用较多存储空间')}
+                  size='default'
+                  checkedText='｜'
+                  uncheckedText='〇'
+                  onChange={handleFieldChange('general_setting.log_content_enabled')}
                 />
               </Col>
             </Row>

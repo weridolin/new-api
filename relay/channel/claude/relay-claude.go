@@ -886,6 +886,7 @@ func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.
 	}
 
 	HandleStreamFinalResponse(c, info, claudeInfo)
+	common.SetContextKey(c, constant.ContextKeyOutputContent, claudeInfo.ResponseText.String())
 	return claudeInfo.Usage, nil
 }
 
@@ -954,6 +955,16 @@ func ClaudeHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayI
 	if handleErr != nil {
 		return nil, handleErr
 	}
+	if claudeInfo.ResponseText.Len() == 0 {
+		// Non-streaming: extract text from response content blocks
+		var claudeResponse dto.ClaudeResponse
+		if common.Unmarshal(responseBody, &claudeResponse) == nil {
+			for _, block := range claudeResponse.Content {
+				claudeInfo.ResponseText.WriteString(block.GetText())
+			}
+		}
+	}
+	common.SetContextKey(c, constant.ContextKeyOutputContent, claudeInfo.ResponseText.String())
 	return claudeInfo.Usage, nil
 }
 

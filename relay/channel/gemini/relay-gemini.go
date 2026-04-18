@@ -1313,6 +1313,8 @@ func geminiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 		}
 	}
 
+	common.SetContextKey(c, constant.ContextKeyOutputContent, responseText.String())
+
 	return usage, nil
 }
 
@@ -1479,6 +1481,12 @@ func GeminiChatHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.R
 	}
 
 	service.IOCopyBytesGracefully(c, resp, responseBody)
+
+	var outputContent strings.Builder
+	for _, choice := range fullTextResponse.Choices {
+		outputContent.WriteString(choice.Message.StringContent())
+	}
+	common.SetContextKey(c, constant.ContextKeyOutputContent, outputContent.String())
 
 	return &usage, nil
 }

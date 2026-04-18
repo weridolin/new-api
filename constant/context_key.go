@@ -66,4 +66,9 @@ const (
 	// ContextKeyLanguage stores the user's language preference for i18n
 	ContextKeyLanguage ContextKey = "language"
 	ContextKeyIsStream ContextKey = "is_stream"
+
+	// ContextKeyInputContent stores the serialized request input for log content recording
+	ContextKeyInputContent ContextKey = "input_content"
+	// ContextKeyOutputContent stores the accumulated response output for log content recording
+	ContextKeyOutputContent ContextKey = "output_content"
 )

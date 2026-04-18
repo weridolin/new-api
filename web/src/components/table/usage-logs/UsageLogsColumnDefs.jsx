@@ -25,6 +25,7 @@ import {
   Tooltip,
   Popover,
   Typography,
+  Button,
 } from '@douyinfe/semi-ui';
 import {
   renderGroup,
@@ -35,7 +36,7 @@ import {
   renderModelPriceSimple,
 } from '../../../helpers';
 import { IconHelpCircle } from '@douyinfe/semi-icons';
-import { CircleAlert, Route, Sparkles } from 'lucide-react';
+import { CircleAlert, Route, Sparkles, FileText } from 'lucide-react';
 
 const colors = [
   'amber',
@@ -511,6 +512,7 @@ export const getLogsColumns = ({
   copyText,
   showUserInfoFunc,
   openChannelAffinityUsageCacheModal,
+  openLogContentDrawer,
   isAdminUser,
   billingDisplayMode = 'price',
 }) => {
@@ -938,24 +940,50 @@ export const getLogsColumns = ({
           t,
         );
 
+        const canViewContent = record.type === 2 || record.type === 5;
+
         if (!detailSummary) {
           return (
-            <Typography.Paragraph
-              ellipsis={{
-                rows: 2,
-                showTooltip: {
-                  type: 'popover',
-                  opts: { style: { width: 240 } },
-                },
-              }}
-              style={{ maxWidth: 200, marginBottom: 0 }}
-            >
-              {text}
-            </Typography.Paragraph>
+            <Space>
+              <Typography.Paragraph
+                ellipsis={{
+                  rows: 2,
+                  showTooltip: {
+                    type: 'popover',
+                    opts: { style: { width: 240 } },
+                  },
+                }}
+                style={{ maxWidth: 150, marginBottom: 0 }}
+              >
+                {text}
+              </Typography.Paragraph>
+              {canViewContent && (
+                <Tooltip content={t('查看内容')}>
+                  <Button
+                    icon={<FileText size={14} />}
+                    size='small'
+                    onClick={() => openLogContentDrawer(record.request_id)}
+                  />
+                </Tooltip>
+              )}
+            </Space>
           );
         }
 
-        return renderCompactDetailSummary(detailSummary.segments);
+        return (
+          <Space>
+            {renderCompactDetailSummary(detailSummary.segments)}
+            {canViewContent && (
+              <Tooltip content={t('查看内容')}>
+                <Button
+                  icon={<FileText size={14} />}
+                  size='small'
+                  onClick={() => openLogContentDrawer(record.request_id)}
+                />
+              </Tooltip>
+            )}
+          </Space>
+        );
       },
     },
   ];

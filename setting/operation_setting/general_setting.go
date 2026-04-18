@@ -20,6 +20,8 @@ type GeneralSetting struct {
 	CustomCurrencySymbol string `json:"custom_currency_symbol"`
 	// 自定义货币与美元汇率（1 USD = X Custom）
 	CustomCurrencyExchangeRate float64 `json:"custom_currency_exchange_rate"`
+	// 是否记录输入输出内容
+	LogContentEnabled bool `json:"log_content_enabled"`
 }
 
 // 默认配置
@@ -71,6 +73,11 @@ func GetCurrencySymbol() string {
 	default:
 		return ""
 	}
+}
+
+// IsLogContentEnabled 是否记录输入输出内容
+func IsLogContentEnabled() bool {
+	return generalSetting.LogContentEnabled
 }
 
 // GetUsdToCurrencyRate 返回 1 USD = X <currency> 的 X（TOKENS 不适用）

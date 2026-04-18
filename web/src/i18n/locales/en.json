@@ -3515,6 +3515,17 @@
     "（当前仅支持易支付接口，默认使用上方服务器地址作为回调地址！）": "(Currently only supports Epay interface, the default callback address is the server address above!)",
     "，当前无生效订阅，将自动使用钱包": ", no active subscription. Wallet will be used automatically.",
     "，时间：": ",time:",
-    "，点击更新": ", click Update"
+    "，点击更新": ", click Update",
+    "记录输入输出内容": "Log Input/Output Content",
+    "开启后将记录每次调用的完整输入和输出内容，可能占用较多存储空间": "When enabled, the full input and output content of each call will be recorded, which may occupy significant storage space",
+    "查看内容": "View Content",
+    "输入内容": "Input Content",
+    "输出内容": "Output Content",
+    "未记录输入输出内容": "Input/output content not recorded",
+    "调用详情": "Call Details",
+    "无输入内容": "No input content",
+    "无输出内容": "No output content",
+    "获取内容失败": "Failed to get content",
+    "已复制到剪贴板": "Copied to clipboard"
   }
 }

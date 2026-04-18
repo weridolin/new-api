@@ -189,6 +189,8 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 
 	HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)
 
+	common.SetContextKey(c, constant.ContextKeyOutputContent, responseTextBuilder.String())
+
 	return usage, nil
 }
 
@@ -295,6 +297,12 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 	}
 
 	service.IOCopyBytesGracefully(c, resp, responseBody)
+
+	var outputContent strings.Builder
+	for _, choice := range simpleResponse.Choices {
+		outputContent.WriteString(choice.Message.StringContent())
+	}
+	common.SetContextKey(c, constant.ContextKeyOutputContent, outputContent.String())
 
 	return &simpleResponse.Usage, nil
 }

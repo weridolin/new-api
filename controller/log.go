@@ -148,6 +148,73 @@ func GetLogsSelfStat(c *gin.Context) {
 	return
 }
 
+func GetLogContent(c *gin.Context) {
+	userId := c.GetInt("id")
+	isAdmin := c.GetBool("is_admin")
+
+	var logId int
+	var requestId string
+
+	if isAdmin {
+		// 管理员可以通过真实 id 查询
+		logIdStr := c.Param("id")
+		logId, _ = strconv.Atoi(logIdStr)
+	} else {
+		// 非管理员使用 request_id 查询（因为 formatUserLogs 会重置 id）
+		requestId = c.Query("request_id")
+	}
+
+	var content *model.LogContent
+	var err error
+
+	if logId > 0 && isAdmin {
+		logEntry, dbErr := model.GetLogById(logId)
+		if dbErr != nil {
+			common.ApiError(c, dbErr)
+			return
+		}
+		if logEntry == nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "log not found",
+			})
+			return
+		}
+		content, err = model.GetLogContentByLogId(logId)
+	} else if requestId != "" {
+		logEntry, dbErr := model.GetLogByRequestId(requestId, userId, isAdmin)
+		if dbErr != nil {
+			common.ApiError(c, dbErr)
+			return
+		}
+		if logEntry == nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "log not found",
+			})
+			return
+		}
+		content, err = model.GetLogContentByRequestId(requestId)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "missing id or request_id",
+		})
+		return
+	}
+
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    content,
+	})
+}
+
 func DeleteHistoryLogs(c *gin.Context) {
 	targetTimestamp, _ := strconv.ParseInt(c.Query("target_timestamp"), 10, 64)
 	if targetTimestamp == 0 {

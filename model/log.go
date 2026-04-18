@@ -8,6 +8,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -66,10 +67,38 @@ func formatUserLogs(logs []*Log, startIdx int) {
 	}
 }
 
+func GetLogByRequestId(requestId string, userId int, isAdmin bool) (*Log, error) {
+	var log Log
+	tx := LOG_DB.Where("request_id = ?", requestId)
+	if !isAdmin {
+		tx = tx.Where("user_id = ?", userId)
+	}
+	err := tx.First(&log).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &log, nil
+}
+
 func GetLogByTokenId(tokenId int) (logs []*Log, err error) {
 	err = LOG_DB.Model(&Log{}).Where("token_id = ?", tokenId).Order("id desc").Limit(common.MaxRecentItems).Find(&logs).Error
 	formatUserLogs(logs, 0)
 	return logs, err
+}
+
+func GetLogById(logId int) (*Log, error) {
+	var log Log
+	err := LOG_DB.Where("id = ?", logId).First(&log).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &log, nil
 }
 
 func RecordLog(userId int, logType int, content string) {
@@ -91,7 +120,7 @@ func RecordLog(userId int, logType int, content string) {
 }
 
 func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string, tokenName string, content string, tokenId int, useTimeSeconds int,
-	isStream bool, group string, other map[string]interface{}) {
+	isStream bool, group string, other map[string]interface{}, inputContent string) {
 	logger.LogInfo(c, fmt.Sprintf("record error log: userId=%d, channelId=%d, modelName=%s, tokenName=%s, content=%s", userId, channelId, modelName, tokenName, content))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
@@ -132,6 +161,16 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
 	}
+	if operation_setting.IsLogContentEnabled() && inputContent != "" {
+		logContent := &LogContent{
+			LogId:         log.Id,
+			InputContent:  inputContent,
+			OutputContent: "",
+		}
+		if err := InsertLogContent(logContent); err != nil {
+			logger.LogError(c, "failed to record log content: "+err.Error())
+		}
+	}
 }
 
 type RecordConsumeLogParams struct {
@@ -147,6 +186,8 @@ type RecordConsumeLogParams struct {
 	IsStream         bool                   `json:"is_stream"`
 	Group            string                 `json:"group"`
 	Other            map[string]interface{} `json:"other"`
+	InputContent     string                 `json:"input_content,omitempty"`
+	OutputContent    string                 `json:"output_content,omitempty"`
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
@@ -192,6 +233,16 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	err := LOG_DB.Create(log).Error
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
+	}
+	if operation_setting.IsLogContentEnabled() && (params.InputContent != "" || params.OutputContent != "") {
+		logContent := &LogContent{
+			LogId:         log.Id,
+			InputContent:  params.InputContent,
+			OutputContent: params.OutputContent,
+		}
+		if err := InsertLogContent(logContent); err != nil {
+			logger.LogError(c, "failed to record log content: "+err.Error())
+		}
 	}
 	if common.DataExportEnabled {
 		gopool.Go(func() {
@@ -465,7 +516,21 @@ func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64,
 			return total, ctx.Err()
 		}
 
-		result := LOG_DB.Where("created_at < ?", targetTimestamp).Limit(limit).Delete(&Log{})
+		// Collect IDs of logs to be deleted
+		var logIds []int
+		if err := LOG_DB.WithContext(ctx).Model(&Log{}).Where("created_at < ?", targetTimestamp).Limit(limit).Pluck("id", &logIds).Error; err != nil {
+			return total, err
+		}
+		if len(logIds) == 0 {
+			break
+		}
+
+		// Delete corresponding log_content records first
+		if err := DeleteOldLogContent(ctx, logIds); err != nil {
+			return total, err
+		}
+
+		result := LOG_DB.WithContext(ctx).Where("id IN ? AND created_at < ?", logIds, targetTimestamp).Delete(&Log{})
 		if nil != result.Error {
 			return total, result.Error
 		}
