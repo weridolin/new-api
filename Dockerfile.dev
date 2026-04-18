@@ -1,6 +1,6 @@
 FROM golang:1.26.1-bookworm
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip libstdc++6 libgcc-s1 \
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
